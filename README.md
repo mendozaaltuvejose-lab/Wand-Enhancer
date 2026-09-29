@@ -16,6 +16,10 @@
 
 ⚠️⚠️⚠️ There are no official videos showing how to install or use this tool. Scammers are creating fake tutorials using this project's name and placing malware/password stealers in the video descriptions. Official GitHub releases contain release notes only, not `.exe` files. If you downloaded an `.exe` or archive from a YouTube link, a random website, or a third-party mirror, you did not get it from this project. We are not responsible for third-party downloads. ⚠️⚠️⚠️
 
+## 📢 What about this fork. Is it virus/malware/password stealers? 📢
+No.
+Check the code, If you have any doubt. I just wat to help those who can not/don't want to PreBuilt executable themselves. I am a user also.
+
 ## 👾 What does it access?
 
 The default .NET patcher modifies files in the selected local Wand installation and contains no update-checking or telemetry network code. Wand itself remains an online application, build tools restore declared dependencies, and the optional Remote Web Panel deliberately starts a LAN HTTP/WebSocket server and uses Wand API/CDN data. An explicit build-time option can include GitHub release notifications; that variant sends a GitHub API request with your IP and a User-Agent when Wand starts, but sends no Wand or account data and never downloads updates. Review the source and build the executable from your own fork; unsigned patching tools can trigger generic antivirus heuristics.
