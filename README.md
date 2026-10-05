@@ -18,7 +18,7 @@
 
 ## 📢 What about this fork. Is it virus/malware/password stealers? 📢
 No.
-Check the code, If you have any doubt. I just wat to help those who can not/don't want to PreBuilt executable themselves. I am a user also.
+Check the code, If you have any doubt. I just want to help those who can not/don't want to PreBuilt executable themselves. I am a user also.
 
 ## 👾 What does it access?
 
