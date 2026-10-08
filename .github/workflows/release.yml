@@ -1,52 +1,87 @@
-name: Release
+name: Build and Release Wand Pro
 
 on:
   push:
     tags:
-      - '*'
+      - "v*"
+
+permissions:
+  contents: write
 
 jobs:
-  publish-release:
-    if: github.repository == 'k1tbyte/Wand-Enhancer'
+  build-and-release:
+    name: Build and Publish Release
     runs-on: windows-latest
-    permissions:
-      contents: write
-
-    env:
-      RELEASE_VERSION: ${{ github.ref_name }}
 
     steps:
-      - uses: actions/checkout@v5
+      - name: Checkout source
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
         with:
-          fetch-depth: 0
+          node-version: 24
 
-      - uses: pnpm/action-setup@v5
-        with:
-          version: 10
+      - name: Install pnpm
+        shell: powershell
+        run: |
+          npm install --global pnpm
+          pnpm --version
 
-      - uses: actions/setup-node@v5
-        with:
-          node-version: 22
-          cache: pnpm
-          cache-dependency-path: web-panel/pnpm-lock.yaml
+      - name: Install dependencies
+        shell: powershell
+        run: |
+          pnpm install
 
-      - name: Validate release metadata
-        shell: pwsh
-        run: ./scripts/validate-release-metadata.ps1 -ExpectedVersion $env:RELEASE_VERSION
+      - name: Build Wand Pro
+        shell: cmd
+        run: |
+          call build.cmd
+          if errorlevel 1 exit /b 1
 
-      - name: Extract release notes from changelog
-        shell: pwsh
-        run: ./scripts/get-changelog-section.ps1 -Version $env:RELEASE_VERSION -OutputPath release-notes.md
+      - name: Locate executable
+        shell: powershell
+        run: |
+          $exe = Get-ChildItem `
+            -Path $env:GITHUB_WORKSPACE `
+            -Filter "WandEnhancer.exe" `
+            -Recurse `
+            -File `
+            -ErrorAction SilentlyContinue |
+            Select-Object -First 1
 
-      - name: Build release
-        shell: pwsh
-        run: ./build.ps1 -Configuration Release
+          if ($null -eq $exe) {
+            Write-Error "WandEnhancer.exe was not produced by the build."
+            exit 1
+          }
 
-      - name: Publish GitHub release
-        uses: softprops/action-gh-release@v2
-        with:
-          name: ${{ github.ref_name }}
-          tag_name: ${{ github.ref_name }}
-          body_path: release-notes.md
-          files: CHANGELOG.md
-          fail_on_unmatched_files: true
+          Write-Host "Executable found:"
+          Write-Host $exe.FullName
+
+          "EXE_PATH=$($exe.FullName)" |
+            Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Create or update GitHub Release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ github.ref_name }}"
+
+          if gh release view "$TAG" --repo "${{ github.repository }}" >/dev/null 2>&1; then
+            echo "Release $TAG already exists."
+            echo "Replacing WandEnhancer.exe..."
+
+            gh release upload "$TAG" \
+              "$EXE_PATH#WandEnhancer.exe" \
+              --repo "${{ github.repository }}" \
+              --clobber
+          else
+            echo "Creating release $TAG..."
+
+            gh release create "$TAG" \
+              "$EXE_PATH#WandEnhancer.exe" \
+              --repo "${{ github.repository }}" \
+              --title "Wand Pro $TAG" \
+              --generate-notes
+          fi
